@@ -35,7 +35,7 @@ This project performs an exploratory text analysis of *The Guardian’s* coverag
 
 ---
 
-## 👩‍💻 Author
+## 👩🏻‍💻 Author
 **Tidathip Phommachan**  
 Aspiring Computational Conflict Researcher  
 📫 [LinkedIn Profile](https://www.linkedin.com/in/tidathip-phommachan-4653a1335/)

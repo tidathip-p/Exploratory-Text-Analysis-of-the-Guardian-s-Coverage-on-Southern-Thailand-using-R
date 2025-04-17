@@ -39,6 +39,7 @@ This project performs an exploratory text analysis of *The Guardian’s* coverag
 **Tidathip Phommachan**  
 Aspiring Computational Conflict Researcher  
 📫 [LinkedIn Profile](https://www.linkedin.com/in/tidathip-phommachan-4653a1335/)
+📝 [For more detail on interpretation of the analysis, see Notion](https://brass-lemon-14c.notion.site/R-Exploratory-Text-Analysis-of-The-Guardian-s-Coverage-on-Southern-Thailand-13e13ab00fbe81a1adcaf5e8dfacc0d1)
 
 ---
 

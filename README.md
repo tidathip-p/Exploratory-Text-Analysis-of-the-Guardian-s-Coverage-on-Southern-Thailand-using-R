@@ -44,4 +44,4 @@ Aspiring Computational Conflict Researcher
 ---
 
 ## 📌 License
-This project is for academic and portfolio use only. Not affiliated with *The Guardian*.
+This project is for academic and portfolio use only. Not affiliated with *The Guardian*. Feel free to contribute.

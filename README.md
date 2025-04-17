@@ -15,12 +15,16 @@ This project performs an exploratory text analysis of *The Guardian’s* coverag
 
 ## 🛠️ Tools & Libraries
 - **R & RStudio**
-- `tidyverse`
+- `rvest`
+- `dplyr`
+- `stringr`
+- `tm`
 - `tidytext`
 - `ggplot2`
-- `wordcloud`
-- `lubridate`
-
+- `tidyr`
+- `topicmodels`
+- `SnowballC`
+  
 ---
 
 ## 🔍 Key Insights

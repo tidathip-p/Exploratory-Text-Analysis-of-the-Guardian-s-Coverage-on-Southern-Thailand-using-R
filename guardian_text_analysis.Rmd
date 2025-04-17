@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Step 1: Load Required Libraries
 
 ```{r load-libraries, message=FALSE}
-# Install necessary packages (uncomment if needed)
+# Install necessary packages 
 # install.packages(c("rvest", "dplyr", "stringr", "tm", "tidytext", "ggplot2", "tidyr", "topicmodels", "SnowballC"))
 
 library(rvest)

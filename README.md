@@ -1,0 +1,2 @@
+# Exploratory-Text-Analysis-of-the-Guardian-s-Coverage-on-Southern-Thailand-using-R
+This project involved automating web scraping of media coverage from The Guardian over two decades, analyzing sentiment and identifying topic trends. By utilizing R for text and sentiment analysis, I examined how international reporting frames the socio-political impacts of regional insurgency, governance, and security.

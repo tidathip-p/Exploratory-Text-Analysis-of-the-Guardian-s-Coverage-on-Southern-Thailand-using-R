@@ -1,1 +1,140 @@
+---
+title: "Exploratory Text Analysis of The Guardian’s Coverage on Southern Thailand"
+author: "Tidathip Phommachan"
+output: html_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## 📦 Step 1: Load Required Libraries
+
+```{r libraries}
+# Uncomment if you need to install
+# install.packages(c("rvest", "dplyr", "stringr", "tm", "tidytext", "ggplot2", "tidyr", "topicmodels", "SnowballC", "textdata"))
+
+library(rvest)
+library(dplyr)
+library(stringr)
+library(tm)
+library(tidytext)
+library(ggplot2)
+library(tidyr)
+library(topicmodels)
+library(SnowballC)
+library(textdata)
+library(tibble)
+```
+
+## 🌐 Step 2: Scrape the Articles
+
+```{r scraping}
+scrape_article <- function(url) {
+  webpage <- read_html(url)
+  
+  title <- webpage %>%
+    html_node("title") %>%
+    html_text(trim = TRUE)
+  
+  date <- webpage %>%
+    html_node("meta[property='article:published_time']") %>%
+    html_attr("content") %>%
+    str_extract("\\d{4}-\\d{2}-\\d{2}")
+  
+  content <- webpage %>%
+    html_nodes("p") %>%
+    html_text(trim = TRUE) %>%
+    paste(collapse = " ")
+  
+  return(data.frame(title = title, date = date, content = content, url = url, stringsAsFactors = FALSE))
+}
+
+urls <- c(
+  # (your Guardian article URLs here — for brevity, list trimmed)
+)
+
+articles <- bind_rows(lapply(urls, scrape_article))
+```
+
+## 🧹 Step 3: Preprocessing Text
+
+```{r cleaning}
+clean_text <- function(text) {
+  text <- tolower(text)
+  text <- removePunctuation(text)
+  text <- removeNumbers(text)
+  text <- removeWords(text, stopwords("en"))
+  text <- wordStem(text)
+  text <- stripWhitespace(text)
+  return(text)
+}
+
+articles$content_clean <- sapply(articles$content, clean_text)
+```
+
+## 📊 Step 4: Word Frequency
+
+```{r word-frequency}
+articles_tidy <- articles %>%
+  unnest_tokens(word, content_clean)
+
+word_freq <- articles_tidy %>%
+  count(word, sort = TRUE)
+
+# Plot
+word_freq %>%
+  filter(n > 30) %>%
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "#2c7fb8") +
+  coord_flip() +
+  labs(title = "Most Common Words in Guardian Articles", x = "Word", y = "Frequency")
+```
+
+## 💬 Step 5: Sentiment Analysis
+
+```{r sentiment}
+sentiment_lexicon <- get_sentiments("bing")
+
+article_sentiments <- articles_tidy %>%
+  inner_join(sentiment_lexicon, by = "word") %>%
+  count(url, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
+  mutate(sentiment_score = positive - negative)
+
+# Plot
+article_sentiments %>%
+  ggplot(aes(x = reorder(url, sentiment_score), y = sentiment_score, fill = sentiment_score > 0)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Sentiment Score by Article", x = "Article URL", y = "Sentiment Score") +
+  scale_fill_manual(values = c("TRUE" = "#1a9850", "FALSE" = "#d73027"), guide = "none")
+```
+
+## 🧠 Step 6: Topic Modeling
+
+```{r topics}
+dtm <- articles_tidy %>%
+  count(url, word) %>%
+  cast_dtm(document = url, term = word, value = n)
+
+lda_model <- LDA(dtm, k = 3, control = list(seed = 1234))
+
+topics <- tidy(lda_model, matrix = "beta")
+
+top_terms <- topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+# Plot
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top Terms in Each Topic", x = "Term", y = "Beta")
+```

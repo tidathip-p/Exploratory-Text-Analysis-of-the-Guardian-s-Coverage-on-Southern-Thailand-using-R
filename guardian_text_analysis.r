@@ -1,19 +1,10 @@
----
-title: "Exploratory Text Analysis of The Guardian’s Coverage on Southern Thailand using R"
-author: "Tidathip Phommachan"
-output: html_document
----
+### Step 1: Load Required Libraries ###
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+# Install the packages 
+install.packages(c("rvest", "dplyr", "stringr", "tm", "tidytext", "ggplot2", "tidyr", "topicmodels
+", "SnowballC"))
 
-## Step 1: Load Required Libraries
-
-```{r load-libraries, message=FALSE}
-# Install necessary packages 
-# install.packages(c("rvest", "dplyr", "stringr", "tm", "tidytext", "ggplot2", "tidyr", "topicmodels", "SnowballC"))
-
+# Load the libraries
 library(rvest)
 library(dplyr)
 library(stringr)
@@ -23,19 +14,35 @@ library(ggplot2)
 library(tidyr)
 library(topicmodels)
 library(SnowballC)
-```
 
-## Step 2: Scrape the Web Pages
+### Step 2: Scrape the Web Pages ###
 
-```{r scrape-articles}
+# Function to scrape an article
 scrape_article <- function(url) {
   webpage <- read_html(url)
-  title <- webpage %>% html_node("title") %>% html_text(trim = TRUE)
-  date <- webpage %>% html_node("meta[property='article:published_time']") %>% html_attr("content") %>% str_extract("\\d{4}-\\d{2}-\\d{2}")
-  content <- webpage %>% html_nodes("p") %>% html_text(trim = TRUE) %>% paste(collapse = " ")
+  
+  # Extract title
+  title <- webpage %>%
+    html_node("title") %>%
+    html_text(trim = TRUE)
+  
+  # Extract date 
+  date <- webpage %>%
+    html_node("meta[property='article:published_time']") %>%
+    html_attr("content") %>%
+    str_extract("\\d{4}-\\d{2}-\\d{2}")  # Extract date format
+  
+  # Extract article content 
+  content <- webpage %>%
+    html_nodes("p") %>%
+    html_text(trim = TRUE) %>%
+    paste(collapse = " ")
+  
+  # Return as a data frame
   return(data.frame(title = title, date = date, content = content, url = url, stringsAsFactors = FALSE))
 }
 
+# Apply the function to all URLs
 urls <- c(
   "https://www.theguardian.com/world/2004/jul/25/jasonburke.theobserver",
   "https://www.theguardian.com/world/2004/oct/27/thailand",
@@ -62,76 +69,99 @@ urls <- c(
   "https://www.theguardian.com/world/2016/aug/12/thailand-attacks-who-are-likely-perpetrators",
   "https://www.theguardian.com/world/2019/nov/06/dead-killed-in-biggest-attack-in-thailands-restive-south-in-years",
   "https://www.theguardian.com/global-development/2021/aug/17/the-woman-on-a-mission-to-expose-torture-in-thailands-troubled-south"
-)
+  )
 
+# Scrape all articles
 articles <- do.call(rbind, lapply(urls, scrape_article))
-head(articles)
-```
 
-## Step 3: Data Preprocessing
+# View the scraped data
+View(articles)
 
-```{r preprocessing}
+### Step 3: Data Preprocessing ###
+
+# Function to clean and preprocess text
 clean_text <- function(text) {
-  text <- tolower(text)
-  text <- removePunctuation(text)
-  text <- removeNumbers(text)
-  text <- removeWords(text, stopwords("en"))
-  text <- wordStem(text, language = "en")
-  text <- stripWhitespace(text)
+  text <- tolower(text)  # Convert to lowercase
+  text <- removePunctuation(text)  # Remove punctuation
+  text <- removeNumbers(text)  # Remove numbers
+  text <- removeWords(text, stopwords("en"))  # Remove stopwords
+  text <- wordStem(text, language = "en")  # Perform stemming
+  text <- stripWhitespace(text)  # Remove extra whitespace
   return(text)
 }
 
+# Apply the cleaning function to the article content
 articles$content_clean <- sapply(articles$content, clean_text)
+
+# View the cleaned content
 head(articles$content_clean)
-```
 
-## Step 4: Word Frequency
+### Step 4: Word Frequency ###
 
-```{r word-frequency}
-articles_tidy <- articles %>% unnest_tokens(word, content_clean)
-word_freq <- articles_tidy %>% count(word, sort = TRUE)
+# Tokenize the cleaned content
+articles_tidy <- articles %>%
+  unnest_tokens(word, content_clean)
+
+# Count word frequencies
+word_freq <- articles_tidy %>%
+  count(word, sort = TRUE)
+
+# View the most frequent words
 head(word_freq, 22)
 
+# Visualize the most common words 
 word_freq %>%
   filter(n > 30) %>%
   ggplot(aes(x = reorder(word, n), y = n)) +
   geom_col() +
   coord_flip() +
   labs(title = "Most Common Words in Articles", x = "Word", y = "Frequency")
-```
 
-## Step 5: Sentiment Analysis
+### Step 5: Sentiment Analysis ###
 
-```{r sentiment}
+# Load sentiment lexicon
 sentiment_lexicon <- get_sentiments("bing")
+
+# Perform sentiment analysis
 article_sentiments <- articles_tidy %>%
   inner_join(sentiment_lexicon, by = "word") %>%
   count(url, sentiment) %>%
   pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
   mutate(sentiment_score = positive - negative)
 
+# View sentiment scores by article
 article_sentiments
 
+# Visualize sentiment scores 
 article_sentiments %>%
   ggplot(aes(x = url, y = sentiment_score, fill = factor(sentiment_score > 0))) +
   geom_col() +
   coord_flip() +
   labs(title = "Sentiment Scores by Article", x = "Article", y = "Sentiment Score")
-```
 
-## Step 6: Topic Modeling
+### Step 6: Topic Modeling ###
 
-```{r topic-modeling}
-dtm <- articles_tidy %>% count(url, word) %>% cast_dtm(url, word, n)
+# Create a document-term matrix
+dtm <- articles_tidy %>%
+  count(url, word) %>%
+  cast_dtm(url, word, n)
+
+# Fit the LDA model with a chosen number of topics (k = 3)
 lda_model <- LDA(dtm, k = 3, control = list(seed = 1234))
+
+# Extract topics
 topics <- tidy(lda_model, matrix = "beta")
 
+# View top terms in each topic
 top_terms <- topics %>%
   group_by(topic) %>%
   top_n(10, beta) %>%
   ungroup() %>%
   arrange(topic, -beta)
 
+View(top_terms)
+
+# Visualize top terms in each topic 
 top_terms %>%
   ggplot(aes(x = reorder_within(term, beta, topic), y = beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
@@ -139,4 +169,3 @@ top_terms %>%
   coord_flip() +
   scale_x_reordered() +
   labs(title = "Top Terms in Each Topic", x = "Term", y = "Beta")
-```

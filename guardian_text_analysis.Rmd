@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Text Analysis of The Guardian’s Coverage on Southern Thailand"
+title: "Exploratory Text Analysis of The Guardian’s Coverage on Southern Thailand using R"
 author: "Tidathip Phommachan"
 output: html_document
 ---
